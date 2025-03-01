@@ -1,0 +1,107 @@
+---
+title: How to deploy astro to GitHub pages
+pubDate: 2025-02-28T21:00:00Z
+description: Tutorial to deploy astro to GitHub pages
+author: kidkrub
+tags: ["tutorial"]
+---
+
+import Image from "../components/Image.astro";
+import astroConfig from "../assets/images/how-to-deploy-astro-to-github-pages/astro-config.png";
+import changeDeploy from "../assets/images/how-to-deploy-astro-to-github-pages/change-deploy-from-branch-to-github-actions.png"
+import projectTerminal from "../assets/images/how-to-deploy-astro-to-github-pages/create-astro-project.png"
+import createRepository from "../assets/images/how-to-deploy-astro-to-github-pages/create-repository.png"
+import terminalFinished from "../assets/images/how-to-deploy-astro-to-github-pages/created-astro-project.png"
+import createdRepository from "../assets/images/how-to-deploy-astro-to-github-pages/created-repository.png"
+import errorWorkflows from "../assets/images/how-to-deploy-astro-to-github-pages/error-workflow.png"
+import finishedioView from "../assets/images/how-to-deploy-astro-to-github-pages/finished-github-io-view.png"
+import githubioView from "../assets/images/how-to-deploy-astro-to-github-pages/github-io-view.png"
+import projectToGitHub from "../assets/images/how-to-deploy-astro-to-github-pages/push-project-to-github.png"
+import successWorkflows from "../assets/images/how-to-deploy-astro-to-github-pages/success-workflow.png"
+
+
+1st, we have to create astro project with npm or pnpm
+
+```bash
+npm create astro@latest --template minimal
+```
+or
+```bash
+pnpm create astro@latest --template minimal
+```
+
+<Image src={projectTerminal} alt="" />
+then name it as `<username>.github.io`
+<Image src={terminalFinished} alt="" />
+after that install dependencies? Yes  
+Initialize a new git repository? No (We'll do it later)  
+Edit `astro.config.mjs` site in defineConfig
+```js
+defineConfig({
+  site: "https://<username>.github.io",
+});
+```
+after finished create project head to [GitHub](https://github.com) and create a new repository  
+<Image src={createRepository} alt="" />
+we have to named it as same as our project name which mean `<username>.github.io`
+<Image src={createdRepository} alt="" />
+now we'll get commands that we can use to push our project to GitHub  
+now open our created project with vscode or access it with terminal
+then enter the command
+```bash
+git init
+git commit -m "Comment"
+git add .
+```
+then enter the command that we got from GitHub
+<Image src={projectToGitHub} alt="" />
+it will deploy our project to github.io but it's not correct one
+<Image src={githubioView} alt="" />
+so we have to add `deploy.yml` in `.github/workflows` directory
+```yaml
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout your repository using git
+        uses: actions/checkout@v4
+      - name: Install, build, and upload your site
+        uses: withastro/action@v3
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+```
+but after we push our script has an error because we use pnpm
+<Image src={errorWorkflows} alt="" />
+so we have to fix it by add version to our yml
+```yaml
+- name: Install, build, and upload your site
+  uses: withastro/action@v3
+  with:
+    package-manager: pnpm@latest
+```
+but before we push it to github we have to change source of pages from branch to GitHub Actions
+<Image src={changeDeploy} alt="" />
+after that we can push the fix to GitHub and it should success run workflows with our page on GitHub Pages
+<Image src={successWorkflows} alt="" />
+<Image src={finishedioView} alt="" />
